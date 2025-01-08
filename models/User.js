@@ -43,16 +43,17 @@ userSchema.pre("save", async function (next) {
 // Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
-    const isMatch = await bcrypt.compare(candidatePassword, this.password);
-    console.log('Password comparison:', { 
-      isMatch,
-      hashedPassword: !!this.password,
-      candidatePassword: !!candidatePassword
+    console.log('Comparing passwords:', {
+      candidatePassword: candidatePassword.slice(0, 3) + '...',
+      hashedPassword: this.password.slice(0, 10) + '...',
     });
+
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
+    console.log('Password comparison result:', { isMatch });
     return isMatch;
   } catch (error) {
     console.error('Password comparison error:', error);
-    return false;
+    throw error; // Let the error propagate to be handled by the controller
   }
 };
 

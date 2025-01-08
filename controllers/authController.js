@@ -7,9 +7,7 @@ const { APIError } = require("../utils/errorHandler");
 exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
-
-    // Log the received data (remove in production)
-    console.log('Received registration data:', { username, email, password: '***' });
+    console.log('Registration attempt:', { username, email, hasPassword: !!password });
 
     if (!username || !email || !password) {
       return res.status(400).json({ 
@@ -22,12 +20,13 @@ exports.register = async (req, res) => {
       });
     }
 
+    // Check for existing user
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email: email.toLowerCase() }, { username }],
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
+      if (existingUser.email === email.toLowerCase()) {
         return res.status(400).json({
           message: "Validation failed",
           errors: { email: "Email is already registered" },
@@ -41,17 +40,18 @@ exports.register = async (req, res) => {
       }
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    // Create new user
     const user = new User({
       username,
       email: email.toLowerCase(),
-      password: hashedPassword,
+      password, // Password will be hashed by the pre-save middleware
     });
 
+    console.log('Saving user with password:', { hasPassword: !!user.password });
     await user.save();
+    console.log('User saved successfully');
 
+    // Generate tokens
     const tokens = await tokenUtils.generateTokens(user._id);
 
     res.status(201).json({
