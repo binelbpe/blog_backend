@@ -61,7 +61,11 @@ const securityMiddleware = {
 
   // CORS configuration
   cors: cors({
-    origin: process.env.FRONTEND_URL || "https://blogs-client-mil7-binelbpes-projects.vercel.app",
+    origin: [
+      'https://blogs-client-mil7.vercel.app',
+      'https://blogs-client-mil7-binelbpes-projects.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
