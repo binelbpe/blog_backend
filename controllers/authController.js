@@ -89,14 +89,20 @@ exports.login = async (req, res, next) => {
       });
     }
 
+    // Find user and log the result
     const user = await User.findOne({ email: email.toLowerCase() });
+    console.log('User lookup result:', { found: !!user, email });
+
     if (!user) {
       throw new APIError("Authentication failed", 401, {
         email: "Invalid email or password",
       });
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // Check password and log the result
+    const isValidPassword = await user.comparePassword(password);
+    console.log('Password validation:', { isValid: isValidPassword });
+
     if (!isValidPassword) {
       throw new APIError("Authentication failed", 401, {
         password: "Invalid email or password",
@@ -105,12 +111,12 @@ exports.login = async (req, res, next) => {
 
     // Generate tokens
     const tokens = await tokenUtils.generateTokens(user._id);
-    console.log('Generated tokens:', { 
-      hasAccessToken: !!tokens.accessToken, 
-      hasRefreshToken: !!tokens.refreshToken 
+    console.log('Token generation:', { 
+      success: !!tokens,
+      hasAccessToken: !!tokens?.accessToken,
+      hasRefreshToken: !!tokens?.refreshToken
     });
 
-    // Send response
     const response = {
       status: "success",
       message: "Login successful",
@@ -125,15 +131,13 @@ exports.login = async (req, res, next) => {
       }
     };
 
-    console.log('Sending response:', { 
-      status: response.status,
-      hasData: !!response.data,
-      hasUser: !!response.data?.user
-    });
-
     return res.json(response);
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', {
+      message: error.message,
+      stack: error.stack,
+      errors: error.errors
+    });
     return next(error);
   }
 };
