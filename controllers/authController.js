@@ -80,6 +80,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email);
 
     if (!email || !password) {
       throw new APIError("All fields are required", 400, {
@@ -102,12 +103,14 @@ exports.login = async (req, res, next) => {
       });
     }
 
+    console.log('Generating tokens for user:', user._id);
     const tokens = await tokenUtils.generateTokens(user._id);
-    if (!tokens.accessToken || !tokens.refreshToken) {
-      throw new Error("Failed to generate tokens");
-    }
+    console.log('Generated tokens:', { 
+      hasAccessToken: !!tokens.accessToken, 
+      hasRefreshToken: !!tokens.refreshToken 
+    });
 
-    res.json({
+    const response = {
       status: "success",
       message: "Login successful",
       data: {
@@ -119,8 +122,12 @@ exports.login = async (req, res, next) => {
           email: user.email,
         }
       }
-    });
+    };
+    
+    console.log('Sending response:', response);
+    res.json(response);
   } catch (error) {
+    console.error('Login error:', error);
     next(error);
   }
 };
