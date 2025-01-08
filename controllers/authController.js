@@ -8,8 +8,18 @@ exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Log the received data (remove in production)
+    console.log('Received registration data:', { username, email, password: '***' });
+
     if (!username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ 
+        message: "All fields are required",
+        errors: {
+          username: !username ? "Username is required" : "",
+          email: !email ? "Email is required" : "",
+          password: !password ? "Password is required" : "",
+        }
+      });
     }
 
     const existingUser = await User.findOne({
@@ -45,17 +55,24 @@ exports.register = async (req, res) => {
     const tokens = await tokenUtils.generateTokens(user._id);
 
     res.status(201).json({
+      status: "success",
       message: "User registered successfully",
-      ...tokens,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        }
+      }
     });
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ 
+      status: "error",
+      message: "Internal server error" 
+    });
   }
 };
 
@@ -75,14 +92,12 @@ exports.login = async (req, res, next) => {
     if (!user) {
       throw new APIError("Authentication failed", 401, {
         email: "Invalid email or password",
-        password: "Invalid email or password",
       });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       throw new APIError("Authentication failed", 401, {
-        email: "Invalid email or password",
         password: "Invalid email or password",
       });
     }
@@ -93,13 +108,14 @@ exports.login = async (req, res, next) => {
       status: "success",
       message: "Login successful",
       data: {
-        ...tokens,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         user: {
           id: user._id,
           username: user.username,
           email: user.email,
-        },
-      },
+        }
+      }
     });
   } catch (error) {
     next(error);
