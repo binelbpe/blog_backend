@@ -61,6 +61,30 @@ const tokenUtils = {
       return null;
     }
   },
+
+  revokeRefreshToken: async (token) => {
+    try {
+      await RefreshToken.updateOne(
+        { token },
+        { isRevoked: true }
+      );
+    } catch (error) {
+      console.error('Error revoking refresh token:', error);
+      throw error;
+    }
+  },
+
+  revokeAllUserTokens: async (userId) => {
+    try {
+      await RefreshToken.updateMany(
+        { user: userId, isRevoked: false },
+        { isRevoked: true }
+      );
+    } catch (error) {
+      console.error('Error revoking all user tokens:', error);
+      throw error;
+    }
+  }
 };
 
 module.exports = tokenUtils; 

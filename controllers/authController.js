@@ -103,6 +103,9 @@ exports.login = async (req, res, next) => {
     }
 
     const tokens = await tokenUtils.generateTokens(user._id);
+    if (!tokens.accessToken || !tokens.refreshToken) {
+      throw new Error("Failed to generate tokens");
+    }
 
     res.json({
       status: "success",
