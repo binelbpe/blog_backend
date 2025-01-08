@@ -7,6 +7,15 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const tokenUtils = {
   generateTokens: async (userId) => {
     try {
+      // Add debug logging
+      console.log('Generating tokens for userId:', userId);
+      console.log('ACCESS_TOKEN_SECRET:', !!ACCESS_TOKEN_SECRET);
+      console.log('REFRESH_TOKEN_SECRET:', !!REFRESH_TOKEN_SECRET);
+
+      if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
+        throw new Error('Token secrets not configured');
+      }
+
       const accessToken = jwt.sign(
         { userId },
         ACCESS_TOKEN_SECRET,
@@ -18,6 +27,12 @@ const tokenUtils = {
         REFRESH_TOKEN_SECRET,
         { expiresIn: '7d' }
       );
+
+      // Verify tokens were generated
+      console.log('Tokens generated:', {
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken
+      });
 
       // Store refresh token in database
       const expiresAt = new Date();
@@ -35,7 +50,7 @@ const tokenUtils = {
       };
     } catch (error) {
       console.error('Token generation error:', error);
-      throw new Error('Failed to generate tokens');
+      throw new Error(`Failed to generate tokens: ${error.message}`);
     }
   },
 

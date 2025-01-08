@@ -104,11 +104,18 @@ exports.login = async (req, res, next) => {
     }
 
     console.log('Generating tokens for user:', user._id);
-    const tokens = await tokenUtils.generateTokens(user._id);
-    console.log('Generated tokens:', { 
-      hasAccessToken: !!tokens.accessToken, 
-      hasRefreshToken: !!tokens.refreshToken 
-    });
+    let tokens;
+    try {
+      tokens = await tokenUtils.generateTokens(user._id);
+    } catch (tokenError) {
+      console.error('Token generation failed:', tokenError);
+      throw new APIError("Failed to generate authentication tokens", 500);
+    }
+
+    if (!tokens.accessToken || !tokens.refreshToken) {
+      console.error('Generated tokens are invalid:', tokens);
+      throw new APIError("Invalid token generation", 500);
+    }
 
     const response = {
       status: "success",
@@ -124,7 +131,11 @@ exports.login = async (req, res, next) => {
       }
     };
     
-    console.log('Sending response:', response);
+    console.log('Sending response with tokens:', {
+      hasAccessToken: !!response.data.accessToken,
+      hasRefreshToken: !!response.data.refreshToken
+    });
+    
     res.json(response);
   } catch (error) {
     console.error('Login error:', error);
