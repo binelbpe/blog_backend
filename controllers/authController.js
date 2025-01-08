@@ -81,6 +81,11 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     console.log('Login attempt for email:', email);
+    console.log('Environment check:', {
+      hasJWTSecret: !!process.env.JWT_SECRET,
+      hasRefreshSecret: !!process.env.REFRESH_TOKEN_SECRET,
+      frontendURL: process.env.FRONTEND_URL
+    });
 
     if (!email || !password) {
       throw new APIError("All fields are required", 400, {
@@ -103,18 +108,19 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    console.log('Generating tokens for user:', user._id);
+    console.log('User found:', user._id);
+    console.log('Password validation successful');
+
     let tokens;
     try {
       tokens = await tokenUtils.generateTokens(user._id);
+      console.log('Tokens generated successfully:', {
+        hasAccessToken: !!tokens.accessToken,
+        hasRefreshToken: !!tokens.refreshToken
+      });
     } catch (tokenError) {
       console.error('Token generation failed:', tokenError);
       throw new APIError("Failed to generate authentication tokens", 500);
-    }
-
-    if (!tokens.accessToken || !tokens.refreshToken) {
-      console.error('Generated tokens are invalid:', tokens);
-      throw new APIError("Invalid token generation", 500);
     }
 
     const response = {
@@ -131,11 +137,7 @@ exports.login = async (req, res, next) => {
       }
     };
     
-    console.log('Sending response with tokens:', {
-      hasAccessToken: !!response.data.accessToken,
-      hasRefreshToken: !!response.data.refreshToken
-    });
-    
+    console.log('Sending login response');
     res.json(response);
   } catch (error) {
     console.error('Login error:', error);
