@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const User = require("../models/user");
+const User = require("../models/User");
 const tokenUtils = require("../utils/tokenUtils");
 const { APIError } = require("../utils/errorHandler");
 
