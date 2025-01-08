@@ -89,9 +89,13 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Find user and log the result
-    const user = await User.findOne({ email: email.toLowerCase() });
-    console.log('User lookup result:', { found: !!user, email });
+    // Find user with password field
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    console.log('User lookup result:', { 
+      found: !!user, 
+      hasPassword: !!user?.password,
+      email 
+    });
 
     if (!user) {
       throw new APIError("Authentication failed", 401, {
@@ -99,7 +103,7 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Check password and log the result
+    // Check password
     const isValidPassword = await user.comparePassword(password);
     console.log('Password validation:', { isValid: isValidPassword });
 
@@ -111,11 +115,6 @@ exports.login = async (req, res, next) => {
 
     // Generate tokens
     const tokens = await tokenUtils.generateTokens(user._id);
-    console.log('Token generation:', { 
-      success: !!tokens,
-      hasAccessToken: !!tokens?.accessToken,
-      hasRefreshToken: !!tokens?.refreshToken
-    });
 
     const response = {
       status: "success",
