@@ -131,25 +131,37 @@ exports.refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(400).json({ message: "Refresh token is required" });
+      return res.status(400).json({
+        status: "error",
+        message: "Refresh token is required"
+      });
     }
 
     const decoded = await tokenUtils.verifyRefreshToken(refreshToken);
     if (!decoded) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid refresh token"
+      });
     }
 
     await tokenUtils.revokeRefreshToken(refreshToken);
-
     const tokens = await tokenUtils.generateTokens(decoded.userId);
 
     res.json({
+      status: "success",
       message: "Tokens refreshed successfully",
-      ...tokens,
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken
+      }
     });
   } catch (error) {
     console.error("Refresh token error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      status: "error",
+      message: "Failed to refresh token"
+    });
   }
 };
 
